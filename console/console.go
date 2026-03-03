@@ -8,6 +8,21 @@ import (
 	"time"
 )
 
+// Statistics for tracking typing performance across sessions
+var stats = struct {
+	maxWPM     float64 // Maximum typing speed achieved
+	minWPM     float64 // Minimum typing speed achieved (excluding zero)
+	totalWPM   float64 // Sum of all WPM scores for calculating average
+	attempts   int     // Number of typing attempts
+	bestText   string  // Text associated with best performance
+	bestErrors int     // Errors in best performance
+}{
+	maxWPM:   -1, // Initialize to -1 so first positive value will be set as max
+	minWPM:   -1, // Initialize to -1 to track first positive value
+	totalWPM: 0,
+	attempts: 0,
+}
+
 // Color codes for terminal output
 const (
 	ColorCyan   = "\033[36m"
@@ -245,19 +260,82 @@ func playAgain() bool {
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(strings.ToLower(input))
 
-		if input == "y" || input == "yes" {
+		switch input {
+		case "y", "yes":
 			return true
-		} else if input == "n" || input == "no" {
+		case "n", "no":
 			return false
 		}
 		fmt.Println(ColorRed + "Please enter 'y' or 'n'." + ColorReset)
 	}
 }
 
+func printStats() {
+	if stats.attempts == 0 {
+		fmt.Println(ColorCyan + "No attempts recorded yet." + ColorReset)
+		return
+	}
+
+	// Calculate average WPM
+	var avgWPM float64
+	if stats.attempts > 0 {
+		avgWPM = stats.totalWPM / float64(stats.attempts)
+	}
+
+	// Display statistics with formatting
+	fmt.Println()
+	fmt.Println(ColorCyan + "Your typing statistics:" + ColorReset)
+	fmt.Println(strings.Repeat("-", 40))
+
+	// Format average with color based on performance
+	avgColor := ColorReset
+	if avgWPM >= 60 {
+		avgColor = ColorGreen
+	} else if avgWPM >= 40 {
+		avgColor = ColorYellow
+	} else {
+		avgColor = ColorRed
+	}
+
+	fmt.Printf("  %sAttempts:%s       %d\n", ColorCyan, ColorReset, stats.attempts)
+	fmt.Printf("  %sBest Speed:%s     %.2f WPM\n", ColorCyan, ColorReset, stats.maxWPM)
+	if stats.minWPM > 0 {
+		fmt.Printf("  %sWorst Speed:%s    %.2f WPM\n", ColorCyan, ColorReset, stats.minWPM)
+	}
+	fmt.Printf("  %sAverage Speed:%s  %s%.2f WPM%s\n", ColorCyan, ColorReset, avgColor, avgWPM, ColorReset)
+	fmt.Println(strings.Repeat("-", 40))
+}
+
+func updateStats(wpm float64, text string, errors int) {
+	// Initialize minWPM on first attempt
+	if stats.attempts == 0 {
+		stats.minWPM = wpm
+	}
+
+	// Update max WPM
+	if wpm > stats.maxWPM {
+		stats.maxWPM = wpm
+		stats.bestText = text
+		stats.bestErrors = errors
+	}
+
+	// Update min WPM (only for positive values)
+	if wpm > 0 && (stats.attempts == 0 || wpm < stats.minWPM) {
+		stats.minWPM = wpm
+	}
+
+	// Update total and count for average
+	stats.totalWPM += wpm
+	stats.attempts++
+}
+
 func RunGame() {
 	printWelcome()
 
 	for {
+		// Print statistics at the beginning of each attempt
+		printStats()
+
 		difficulty := getDifficulty()
 		text := getText(difficulty)
 		displayText(text)
@@ -274,16 +352,37 @@ func RunGame() {
 		// Calculate statistics
 		wpm := calculateWPM(len(typed), duration)
 		errorRate := calculateErrorRate(typed, text)
+		errors := int(float64(len(text)) * errorRate / 100)
+
+		// Update global statistics
+		updateStats(wpm, text, errors)
 
 		// Display results
 		displayResults(wpm, errorRate, text, typed, duration)
 
 		// Ask to play again
 		if !playAgain() {
+			// Final statistics summary
+			fmt.Println()
+			fmt.Println(ColorCyan + "Final typing statistics:" + ColorReset)
+			fmt.Println(strings.Repeat("=", 50))
+			printStats()
+
+			// Best performance details
+			if stats.attempts > 0 {
+				fmt.Println()
+				fmt.Println(ColorCyan + "Your best performance:" + ColorReset)
+				fmt.Println(strings.Repeat("-", 30))
+				fmt.Printf("  %sSpeed:%s    %.2f WPM\n", ColorCyan, ColorReset, stats.maxWPM)
+				fmt.Printf("  %sErrors:%s   %d\n", ColorCyan, ColorReset, stats.bestErrors)
+				fmt.Printf("  %sText:%s     %s\n", ColorCyan, ColorReset, stats.bestText)
+			}
+
 			fmt.Println()
 			fmt.Println(ColorCyan + "Thanks for playing Typing Hero! Goodbye!" + ColorReset)
 			fmt.Println()
 			break
 		}
 	}
+	printStats()
 }
