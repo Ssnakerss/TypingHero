@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Hero - Typing Trainer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a1a2e;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .difficulty-section {
+            margin-bottom: 30px;
+        }
+
+        .difficulty-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .difficulty-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: linear-gradient(90deg, #4CAF50, #FFC107, #f44336);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #1a1a2e;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .difficulty-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1a1a2e;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .start-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 30px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .start-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .text-display {
+            background: #f5f5f5;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            line-height: 1.8;
+            min-height: 100px;
+            border: 2px solid #ddd;
+        }
+
+        .text-display .correct {
+            color: #4CAF50;
+        }
+
+        .text-display .incorrect {
+            color: #f44336;
+            background: #ffcdd2;
+            text-decoration: underline;
+        }
+
+        .text-display .current {
+            background: #FFF59D;
+            padding: 2px 0;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            resize: none;
+            font-family: inherit;
+            margin-bottom: 20px;
+            min-height: 100px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-box.errors {
+            background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+        }
+
+        .stat-box.wpm {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+        }
+
+        .stat-box.accuracy {
+            background: linear-gradient(135deg, #2196F3 0%, #1565C0 100%);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .restart-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: 600;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⌨️ Typing Hero</h1>
+        
+        <div class="difficulty-section">
+            <label class="difficulty-label">Select Difficulty (1-10):</label>
+            <div class="difficulty-controls">
+                <span>Easy</span>
+                <input type="range" id="difficulty" min="1" max="10" value="5">
+                <span>Hard</span>
+                <span class="difficulty-value" id="difficultyValue">5</span>
+            </div>
+        </div>
+
+        <button class="start-btn" id="startBtn">Start Typing</button>
+
+        <div id="typingArea" class="hidden">
+            <div class="timer" id="timer">Time: 0s</div>
+            <div class="text-display" id="textDisplay"></div>
+            <textarea id="userInput" placeholder="Start typing here..."></textarea>
+            
+            <div class="stats">
+                <div class="stat-box errors">
+                    <div class="stat-value" id="errors">0</div>
+                    <div class="stat-label">Errors</div>
+                </div>
+                <div class="stat-box wpm">
+                    <div class="stat-value" id="wpm">0</div>
+                    <div class="stat-label">WPM</div>
+                </div>
+                <div class="stat-box accuracy">
+                    <div class="stat-value" id="accuracy">100%</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+            </div>
+
+            <button class="restart-btn" id="restartBtn">New Text</button>
+        </div>
+
+        <div id="results" class="hidden">
+            <div class="stats">
+                <div class="stat-box errors">
+                    <div class="stat-value" id="finalErrors">0</div>
+                    <div class="stat-label">Total Errors</div>
+                </div>
+                <div class="stat-box wpm">
+                    <div class="stat-value" id="finalWpm">0</div>
+                    <div class="stat-label">Words Per Minute</div>
+                </div>
+                <div class="stat-box accuracy">
+                    <div class="stat-value" id="finalAccuracy">0%</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+            </div>
+            
+            <button class="start-btn" id="tryAgainBtn">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        let currentText = '';
+        let startTime = null;
+        let timerInterval = null;
+        let isTyping = false;
+
+        const difficultySlider = document.getElementById('difficulty');
+        const difficultyValue = document.getElementById('difficultyValue');
+        const startBtn = document.getElementById('startBtn');
+        const typingArea = document.getElementById('typingArea');
+        const textDisplay = document.getElementById('textDisplay');
+        const userInput = document.getElementById('userInput');
+        const timer = document.getElementById('timer');
+        const errorsDisplay = document.getElementById('errors');
+        const wpmDisplay = document.getElementById('wpm');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const results = document.getElementById('results');
+        const finalErrors = document.getElementById('finalErrors');
+        const finalWpm = document.getElementById('finalWpm');
+        const finalAccuracy = document.getElementById('finalAccuracy');
+        const restartBtn = document.getElementById('restartBtn');
+        const tryAgainBtn = document.getElementById('tryAgainBtn');
+
+        difficultySlider.addEventListener('input', () => {
+            difficultyValue.textContent = difficultySlider.value;
+        });
+
+        startBtn.addEventListener('click', startTyping);
+        restartBtn.addEventListener('click', startTyping);
+        tryAgainBtn.addEventListener('click', resetApp);
+
+        userInput.addEventListener('input', () => {
+            if (!isTyping && userInput.value.length > 0) {
+                startTimer();
+                isTyping = true;
+            }
+            updateDisplay();
+            updateStats();
+        });
+
+        async function startTyping() {
+            const difficulty = parseInt(difficultySlider.value);
+            
+            try {
+                const response = await fetch('/api/text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ difficulty })
+                });
+                
+                const data = await response.json();
+                currentText = data.text;
+                
+                startBtn.classList.add('hidden');
+                typingArea.classList.remove('hidden');
+                typingArea.classList.add('animate-in');
+                results.classList.add('hidden');
+                
+                userInput.value = '';
+                textDisplay.innerHTML = formatText(currentText, '');
+                
+                isTyping = false;
+                startTime = null;
+                clearInterval(timerInterval);
+                timer.textContent = 'Time: 0s';
+                
+                errorsDisplay.textContent = '0';
+                wpmDisplay.textContent = '0';
+                accuracyDisplay.textContent = '100%';
+                
+            } catch (error) {
+                console.error('Error fetching text:', error);
+                alert('Failed to load text. Please try again.');
+            }
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                timer.textContent = `Time: ${elapsed}s`;
+            }, 1000);
+        }
+
+        function formatText(original, userText) {
+            let html = '';
+            for (let i = 0; i < original.length; i++) {
+                if (i < userText.length) {
+                    if (original[i] === userText[i]) {
+                        html += `<span class="correct">${original[i]}</span>`;
+                    } else {
+                        html += `<span class="incorrect">${original[i]}</span>`;
+                    }
+                } else if (i === userText.length) {
+                    html += `<span class="current">${original[i]}</span>`;
+                } else {
+                    html += original[i];
+                }
+            }
+            return html;
+        }
+
+        function updateDisplay() {
+            const userText = userInput.value;
+            textDisplay.innerHTML = formatText(currentText, userText);
+        }
+
+        function updateStats() {
+            const userText = userInput.value;
+            const timeTaken = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+            
+            // Calculate errors
+            let errors = 0;
+            const minLen = Math.min(currentText.length, userText.length);
+            for (let i = 0; i < minLen; i++) {
+                if (currentText[i] !== userText[i]) {
+                    errors++;
+                }
+            }
+            errors += Math.abs(currentText.length - userText.length);
+            
+            // Calculate accuracy
+            let accuracy = 100;
+            if (currentText.length > 0) {
+                accuracy = Math.max(0, ((currentText.length - errors) / currentText.length) * 100);
+            }
+            
+            // Calculate WPM
+            const words = currentText.length / 5;
+            let wpm = 0;
+            if (timeTaken > 0) {
+                wpm = Math.round((words / timeTaken) * 60);
+            }
+            
+            errorsDisplay.textContent = errors;
+            wpmDisplay.textContent = wpm;
+            accuracyDisplay.textContent = Math.round(accuracy) + '%';
+            
+            // Auto-finish when text is complete
+            if (userText.length >= currentText.length && currentText.length > 0) {
+                finishTyping();
+            }
+        }
+
+        async function finishTyping() {
+            clearInterval(timerInterval);
+            const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+            userInput.disabled = true;
+            
+            try {
+                const response = await fetch('/api/result', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        originalText: currentText,
+                        userInput: userInput.value,
+                        timeTakenSec: timeTaken
+                    })
+                });
+                
+                const data = await response.json();
+                
+                typingArea.classList.add('hidden');
+                results.classList.remove('hidden');
+                results.classList.add('animate-in');
+                
+                finalErrors.textContent = data.errors;
+                finalWpm.textContent = Math.round(data.wpm);
+                finalAccuracy.textContent = Math.round(data.accuracy) + '%';
+                
+            } catch (error) {
+                console.error('Error calculating results:', error);
+            }
+        }
+
+        function resetApp() {
+            results.classList.add('hidden');
+            startBtn.classList.remove('hidden');
+            userInput.disabled = false;
+            typingArea.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
