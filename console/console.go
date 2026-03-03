@@ -254,7 +254,7 @@ func playAgain() bool {
 	}
 }
 
-func runGame() {
+func RunGame() {
 	printWelcome()
 
 	for {
@@ -286,8 +286,4 @@ func runGame() {
 			break
 		}
 	}
-}
-
-func main() {
-	runGame()
 }

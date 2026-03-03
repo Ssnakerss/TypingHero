@@ -173,7 +173,7 @@ func abs(n int) int {
 	return n
 }
 
-func main() {
+func StartWeb() {
 	rand.Seed(time.Now().UnixNano())
 
 	// API routes
