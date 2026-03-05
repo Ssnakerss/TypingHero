@@ -182,7 +182,7 @@ func StartWeb() {
 
 	fmt.Println("Strating File Server...")
 	// Serve static files
-	fs := http.FileServer(http.Dir("."))
+	fs := http.FileServer(http.Dir("./web"))
 	http.Handle("/", fs)
 
 	fmt.Println("Typing Trainer server running at http://localhost:8080")

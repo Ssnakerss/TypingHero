@@ -35,11 +35,12 @@ func main() {
 		return
 	}
 
-	// Default behavior: show help if no mode is specified
-	fmt.Println("No mode specified. Please use:")
-	fmt.Println("  -c : Console mode")
-	fmt.Println("  -w : Web mode")
-	fmt.Println("Example: go run main.go -c  (for console mode)")
-	fmt.Println("         go run main.go -w  (for web mode)")
-	flag.PrintDefaults()
+	if !(*consoleMode || *webMode) {
+		// Default behavior: show help if no mode is specified
+		fmt.Println("No mode specified. Please use:")
+		fmt.Println("  -c : Console mode")
+		fmt.Println("  -w : Web mode")
+		fmt.Println("Example: go run main.go -c  (for console mode)")
+		fmt.Println("         go run main.go -w  (for web mode)")
+	}
 }

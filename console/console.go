@@ -3,6 +3,7 @@ package console
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -97,10 +98,10 @@ var textPools = map[int][]string{
 func printWelcome() {
 	fmt.Println()
 	fmt.Println(ColorCyan + ColorBold + `
-    ____  ___      __  __  ___      ____  ____  ___  ____    ____  ___  __  __  ___  
-   (  _ \( __)    (  )(  )( __)    (  _ \(  _)/ __)(_  _)  (  __)/ __)(  )(  )( __) 
+    ____  ___      __  __  ___      ____  ____  ___  ____    ____  ___ __  __  ___  
+   (  _ \( ___)   (  )(  )( __)    (  _ \(  _)/ __)(_  _)  (  __)/ __)(  )(  )( __) 
     ) _ < ) _)     )(__)(  ) _)      ) _ < )_( \__ \  )      ) _)( (__  ) __ ( (_ \ 
-   (____/(____)   (______)(____)    (____/____)(___/ (__)   (____)\___)(_)(_)(___/ 
+   (____/(____)   (______)(____)    (____/____)(___/ (__)   (____)\___)(__)(__)(___/ 
 ` + ColorReset)
 	fmt.Println(ColorYellow + "         Welcome to Typing Hero - Improve your typing skills!" + ColorReset)
 	fmt.Println()
@@ -111,6 +112,8 @@ func printWelcome() {
 	fmt.Println()
 	fmt.Println(strings.Repeat("-", 60))
 }
+
+var prevDiff = 1
 
 func getDifficulty() int {
 	reader := bufio.NewReader(os.Stdin)
@@ -125,12 +128,15 @@ func getDifficulty() int {
 		}
 
 		input = strings.TrimSpace(input)
+		if input == "" {
+			return prevDiff
+		}
 		_, err = fmt.Sscanf(input, "%d", &difficulty)
 		if err != nil || difficulty < 1 || difficulty > 10 {
 			fmt.Println(ColorRed + "Invalid input. Please enter a number between 1 and 10." + ColorReset)
 			continue
 		}
-
+		prevDiff = difficulty
 		return difficulty
 	}
 }
@@ -138,7 +144,8 @@ func getDifficulty() int {
 func getText(difficulty int) string {
 	texts := textPools[difficulty]
 	// Use time to get pseudo-random selection
-	index := time.Now().UnixNano() % int64(len(texts))
+	index := rand.Intn(len(texts))
+	//index := time.Now().UnixNano() % int64(len(texts))
 	return texts[index]
 }
 
@@ -261,7 +268,7 @@ func playAgain() bool {
 		input = strings.TrimSpace(strings.ToLower(input))
 
 		switch input {
-		case "y", "yes":
+		case "y", "yes", "":
 			return true
 		case "n", "no":
 			return false
