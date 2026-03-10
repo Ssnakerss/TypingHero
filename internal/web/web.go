@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/Ssnakerss/TypingHero/internal/models"
 )
 
 type TextRequest struct {
@@ -31,20 +33,6 @@ type ResultResponse struct {
 	TimeTaken int     `json:"timeTaken"`
 }
 
-// Text samples organized by difficulty (1-10)
-var textSamples = map[int][]string{
-	1:  {"cat", "dog", "sun", "run", "the", "and", "big", "red"},
-	2:  {"The cat runs.", "A dog barks.", "The sun shines.", "I like apples.", "She reads books."},
-	3:  {"The quick brown fox jumps over the lazy dog.", "She sells seashells by the seashore.", "How much wood would a woodchuck chuck?"},
-	4:  {"The weather today is pleasant and sunny.", "Walking in the park is very relaxing.", "Learning a new language takes time and practice."},
-	5:  {"Programming is both an art and a science that requires logical thinking.", "The ancient castle stood on a hill overlooking the peaceful village below."},
-	6:  {"Software development involves writing code, testing applications, and fixing bugs.", "The scientist carefully conducted the experiment to test her groundbreaking hypothesis."},
-	7:  {"Machine learning algorithms can analyze large amounts of data to identify patterns and make predictions.", "The entrepreneur founded a successful startup that revolutionized the technology industry."},
-	8:  {"Cryptocurrency transactions are recorded on a decentralized blockchain ledger that ensures transparency and security.", "The philosophical debate about artificial intelligence consciousness continues to divide experts in the field."},
-	9:  {"Quantum computing leverages the principles of quantum mechanics to perform calculations at unprecedented speeds.", "The interdisciplinary research combines advances in neuroscience, computer science, and cognitive psychology."},
-	10: {"The implementation of distributed systems requires careful consideration of consistency, availability, and partition tolerance according to CAP theorem.", "Advanced natural language processing models utilize transformer architectures with attention mechanisms to achieve state-of-the-art results."},
-}
-
 func generateText(difficulty int) string {
 	if difficulty < 1 {
 		difficulty = 1
@@ -53,7 +41,7 @@ func generateText(difficulty int) string {
 		difficulty = 10
 	}
 
-	samples := textSamples[difficulty]
+	samples := models.TextPools[difficulty]
 	selected := samples[rand.Intn(len(samples))]
 
 	// For higher difficulties, combine multiple sentences
