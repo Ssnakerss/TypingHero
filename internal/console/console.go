@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/Ssnakerss/TypingHero/internal/models"
 )
 
 // Statistics for tracking typing performance across sessions
@@ -199,7 +201,10 @@ func calculateErrorRate(typed, target string) float64 {
 	return float64(errors) / float64(len(target)) * 100
 }
 
-func displayResults(wpm float64, errorRate float64, target string, typed string, duration time.Duration) {
+func displayResults(ls models.LessonResults,
+	target string,
+	typed string,
+) {
 	fmt.Println()
 	fmt.Println(strings.Repeat("=", 60))
 	fmt.Println(ColorCyan + ColorBold + "                    RESULTS" + ColorReset)
@@ -208,17 +213,17 @@ func displayResults(wpm float64, errorRate float64, target string, typed string,
 
 	// Format WPM with color based on performance
 	wpmColor := ColorReset
-	if wpm >= 60 {
+	if ls.Wpm >= 60 {
 		wpmColor = ColorGreen
-	} else if wpm >= 40 {
+	} else if ls.Wpm >= 40 {
 		wpmColor = ColorYellow
 	} else {
 		wpmColor = ColorRed
 	}
 
-	fmt.Printf("  %sTyping Speed:%s  %s%.2f WPM%s\n", ColorCyan, ColorReset, wpmColor, wpm, ColorReset)
-	fmt.Printf("  %sError Rate:%s    %.2f%%\n", ColorCyan, ColorReset, errorRate)
-	fmt.Printf("  %sTime Taken:%s    %.2f seconds\n", ColorCyan, ColorReset, duration.Seconds())
+	fmt.Printf("  %sTyping Speed:%s  %s%.2f WPM%s\n", ColorCyan, ColorReset, wpmColor, ls.Wpm, ColorReset)
+	fmt.Printf("  %sError Rate:%s    %.2f%%\n", ColorCyan, ColorReset, ls.ErrorRate)
+	fmt.Printf("  %sTime Taken:%s    %.2f seconds\n", ColorCyan, ColorReset, ls.TimeTaken.Seconds())
 	fmt.Println()
 
 	// Show typed text with visual feedback
@@ -227,9 +232,9 @@ func displayResults(wpm float64, errorRate float64, target string, typed string,
 	fmt.Println()
 
 	// Performance message
-	if errorRate < 5 && wpm > 50 {
+	if ls.ErrorRate < 5 && ls.Wpm > 50 {
 		fmt.Println(ColorGreen + ColorBold + "  ★ Excellent! Outstanding typing performance! ★" + ColorReset)
-	} else if errorRate < 10 && wpm > 30 {
+	} else if ls.ErrorRate < 10 && ls.Wpm > 30 {
 		fmt.Println(ColorYellow + ColorBold + "  ★ Good job! Keep practicing! ★" + ColorReset)
 	} else {
 		fmt.Println(ColorRed + "  Keep practicing! Try again for better results." + ColorReset)
@@ -336,15 +341,16 @@ func updateStats(wpm float64, text string, errors int) {
 	stats.attempts++
 }
 
-func RunGame() {
+func RunGame(storage models.Storage) {
 	printWelcome()
 
+	ls := models.LessonResults{}
 	for {
 		// Print statistics at the beginning of each attempt
 		printStats()
 
-		difficulty := getDifficulty()
-		text := getText(difficulty)
+		ls.Difficulty = getDifficulty()
+		text := getText(ls.Difficulty)
 		displayText(text)
 
 		// Start timer
@@ -354,18 +360,21 @@ func RunGame() {
 		typed := getUserInput()
 
 		// Stop timer
-		duration := time.Since(startTime)
+		ls.TimeTaken = time.Since(startTime)
 
 		// Calculate statistics
-		wpm := calculateWPM(len(typed), duration)
-		errorRate := calculateErrorRate(typed, text)
-		errors := int(float64(len(text)) * errorRate / 100)
+		ls.Wpm = calculateWPM(len(typed), ls.TimeTaken)
+		ls.ErrorRate = calculateErrorRate(typed, text)
+		errors := int(float64(len(text)) * ls.ErrorRate / 100)
 
 		// Update global statistics
-		updateStats(wpm, text, errors)
+		updateStats(ls.Wpm, text, errors)
+
+		// Save session to database
+		storage.SaveTypingLesson(ls)
 
 		// Display results
-		displayResults(wpm, errorRate, text, typed, duration)
+		displayResults(ls, text, typed)
 
 		// Ask to play again
 		if !playAgain() {

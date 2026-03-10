@@ -5,11 +5,21 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Ssnakerss/TypingHero/console"
-	"github.com/Ssnakerss/TypingHero/web"
+	"github.com/Ssnakerss/TypingHero/internal/console"
+	"github.com/Ssnakerss/TypingHero/internal/database"
+	"github.com/Ssnakerss/TypingHero/internal/web"
 )
 
 func main() {
+	// Initialize database
+	dbPath := "data/typing_sessions.sqlite"
+
+	db, err := database.New(dbPath)
+	if err != nil {
+		log.Fatalf("Warning: Could not initialize database: %v", err)
+	}
+	defer db.CloseDB()
+
 	// Define command line flags
 	consoleMode := flag.Bool("c", false, "Run in console mode")
 	webMode := flag.Bool("w", false, "Run in web mode")
@@ -25,7 +35,7 @@ func main() {
 	// Run in console mode if -c flag is present
 	if *consoleMode {
 		fmt.Println("Starting Typing Hero in console mode...")
-		console.RunGame()
+		console.RunGame(db)
 	}
 
 	// Run in web mode if -w flag is present
