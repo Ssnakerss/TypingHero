@@ -312,7 +312,6 @@ func RunGame(storage models.Storage) {
 		updateStats(ls.Wpm, text, errors)
 
 		// Save session to database
-		storage.SaveTypingLesson(ls)
 
 		// Display results
 		displayResults(ls, text, typed)
@@ -338,6 +337,10 @@ func RunGame(storage models.Storage) {
 			fmt.Println()
 			fmt.Println(ColorCyan + "Thanks for playing Typing Hero! Goodbye!" + ColorReset)
 			fmt.Println()
+			err := storage.SaveTypingLesson(ls)
+			if err != nil {
+				fmt.Printf("Result save error: %s", err)
+			}
 			break
 		}
 	}
