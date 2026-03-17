@@ -2,6 +2,7 @@ package console
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -282,64 +283,68 @@ func updateStats(wpm float64, text string, errors int) {
 	stats.attempts++
 }
 
-func RunGame(storage models.Storage) {
+func RunGame(ctx context.Context, c context.CancelFunc, storage models.Storage) {
 	printWelcome()
-
 	ls := models.LessonResults{}
+	defer c()
 	for {
-		// Print statistics at the beginning of each attempt
-		printStats()
-
-		ls.Difficulty = getDifficulty()
-		text := getText(ls.Difficulty)
-		displayText(text)
-
-		// Start timer
-		startTime := time.Now()
-
-		// Get user input
-		typed := getUserInput()
-
-		// Stop timer
-		ls.TimeTaken = time.Since(startTime)
-
-		// Calculate statistics
-		ls.Wpm = calculateWPM(len(typed), ls.TimeTaken)
-		ls.ErrorRate = calculateErrorRate(typed, text)
-		errors := int(float64(len(text)) * ls.ErrorRate / 100)
-
-		// Update global statistics
-		updateStats(ls.Wpm, text, errors)
-
-		// Save session to database
-		storage.SaveTypingLesson(ls)
-
-		// Display results
-		displayResults(ls, text, typed)
-
-		// Ask to play again
-		if !playAgain() {
-			// Final statistics summary
-			fmt.Println()
-			fmt.Println(ColorCyan + "Final typing statistics:" + ColorReset)
-			fmt.Println(strings.Repeat("=", 50))
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			// Print statistics at the beginning of each attempt
 			printStats()
 
-			// Best performance details
-			if stats.attempts > 0 {
-				fmt.Println()
-				fmt.Println(ColorCyan + "Your best performance:" + ColorReset)
-				fmt.Println(strings.Repeat("-", 30))
-				fmt.Printf("  %sSpeed:%s    %.2f WPM\n", ColorCyan, ColorReset, stats.maxWPM)
-				fmt.Printf("  %sErrors:%s   %d\n", ColorCyan, ColorReset, stats.bestErrors)
-				fmt.Printf("  %sText:%s     %s\n", ColorCyan, ColorReset, stats.bestText)
-			}
+			ls.Difficulty = getDifficulty()
+			text := getText(ls.Difficulty)
+			displayText(text)
 
-			fmt.Println()
-			fmt.Println(ColorCyan + "Thanks for playing Typing Hero! Goodbye!" + ColorReset)
-			fmt.Println()
-			break
+			// Start timer
+			startTime := time.Now()
+
+			// Get user input
+			typed := getUserInput()
+
+			// Stop timer
+			ls.TimeTaken = time.Since(startTime)
+
+			// Calculate statistics
+			ls.Wpm = calculateWPM(len(typed), ls.TimeTaken)
+			ls.ErrorRate = calculateErrorRate(typed, text)
+			errors := int(float64(len(text)) * ls.ErrorRate / 100)
+
+			// Update global statistics
+			updateStats(ls.Wpm, text, errors)
+
+			// Save session to database
+			storage.SaveTypingLesson(ls)
+
+			// Display results
+			displayResults(ls, text, typed)
+
+			// Ask to play again
+			if !playAgain() {
+				// Final statistics summary
+				fmt.Println()
+				fmt.Println(ColorCyan + "Final typing statistics:" + ColorReset)
+				fmt.Println(strings.Repeat("=", 50))
+				printStats()
+
+				// Best performance details
+				if stats.attempts > 0 {
+					fmt.Println()
+					fmt.Println(ColorCyan + "Your best performance:" + ColorReset)
+					fmt.Println(strings.Repeat("-", 30))
+					fmt.Printf("  %sSpeed:%s    %.2f WPM\n", ColorCyan, ColorReset, stats.maxWPM)
+					fmt.Printf("  %sErrors:%s   %d\n", ColorCyan, ColorReset, stats.bestErrors)
+					fmt.Printf("  %sText:%s     %s\n", ColorCyan, ColorReset, stats.bestText)
+				}
+
+				fmt.Println()
+				fmt.Println(ColorCyan + "Thanks for playing Typing Hero! Goodbye!" + ColorReset)
+				fmt.Println()
+				return
+			}
 		}
 	}
-	printStats()
 }

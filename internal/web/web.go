@@ -1,14 +1,15 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/Ssnakerss/TypingHero/internal/models"
+	"github.com/Ssnakerss/TypingHero/internal/web/router"
 )
 
 type TextRequest struct {
@@ -161,8 +162,14 @@ func abs(n int) int {
 	return n
 }
 
-func StartWeb() {
-	rand.Seed(time.Now().UnixNano())
+func StartWeb(ctx context.Context, db models.Storage) {
+
+	r := router.New()
+
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
 
 	// API routes
 	http.HandleFunc("/api/text", getTextHandler)
@@ -170,11 +177,13 @@ func StartWeb() {
 
 	fmt.Println("Strating File Server...")
 	// Serve static files
-	fs := http.FileServer(http.Dir("./web"))
+	fs := http.FileServer(http.Dir("."))
 	http.Handle("/", fs)
 
 	fmt.Println("Typing Trainer server running at http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Error starting server:", err)
 	}
+	<-ctx.Done()
+
 }
