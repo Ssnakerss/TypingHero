@@ -12,33 +12,35 @@ import (
 	"github.com/Ssnakerss/TypingHero/internal/models"
 )
 
-// Statistics for tracking typing performance across sessions
+// Структура для хранения статистики пользователя за все сессии
+// Позволяет отслеживать прогресс и лучшие результ��ты
 var stats = struct {
-	maxWPM     float64 // Maximum typing speed achieved
-	minWPM     float64 // Minimum typing speed achieved (excluding zero)
-	totalWPM   float64 // Sum of all WPM scores for calculating average
-	attempts   int     // Number of typing attempts
-	bestText   string  // Text associated with best performance
-	bestErrors int     // Errors in best performance
+	maxWPM     float64 // Максимальная скорость ввода, достигнутая пользователем
+	minWPM     float64 // Минимальная скорость ввода (исключая нулевые значения)
+	totalWPM   float64 // Сумма всех показателей WPM для расчета среднего значения
+	attempts   int     // Общее количество попыток ввода текста
+	bestText   string  // Текст, с которым была достигнута лучшая производительность
+	bestErrors int     // Количество ошибок в лучшей попытке
 }{
-	maxWPM:   -1, // Initialize to -1 so first positive value will be set as max
-	minWPM:   -1, // Initialize to -1 to track first positive value
+	maxWPM:   -1, // Инициализация значением -1, чтобы первое положительное значение стало максимумом
+	minWPM:   -1, // Инициализация значением -1 для отслеживания первого положительного значения
 	totalWPM: 0,
 	attempts: 0,
 }
 
-// Color codes for terminal output
+// Константы для цветового оформления вывода в терминале
+// Используются escape-коды ANSI для изменения цвета и стиля текста
 const (
-	ColorCyan   = "\033[36m"
-	ColorGreen  = "\033[32m"
-	ColorRed    = "\033[31m"
-	ColorYellow = "\033[33m"
-	ColorReset  = "\033[0m"
-	ColorBold   = "\033[1m"
+	ColorCyan   = "\033[36m" // Голубой цвет для заголовков и инструкций
+	ColorGreen  = "\033[32m" // Зеленый цвет для правильных символов и положительных сообщений
+	ColorRed    = "\033[31m" // Красный цвет для ошибок и неправильных символов
+	ColorYellow = "\033[33m" // Желтый цвет для предупреждений и средней производительности
+	ColorReset  = "\033[0m" // Сброс цвета и стиля к значениям по умолчанию
+	ColorBold   = "\033[1m" // Жирный шрифт для выделения важной информации
 )
 
-// Text pools for each difficulty level (1-10)
-
+// Функция вывода приветственного сообщения и инструкций
+// Отображает анимационный логотип и основные правила игры
 func printWelcome() {
 	fmt.Println()
 	fmt.Println(ColorCyan + ColorBold + `
@@ -57,8 +59,12 @@ func printWelcome() {
 	fmt.Println(strings.Repeat("-", 60))
 }
 
+// Переменная для хранения предыдущего выбранного уровня сложности
+// Позволяет пользователю пропустить ввод, используя предыдущее значение
 var prevDiff = 1
 
+// Функция получения уровня сложности от пользователя
+// Обеспечивает ввод и валидацию значения в диапазоне от 1 до 10
 func getDifficulty() int {
 	reader := bufio.NewReader(os.Stdin)
 	var difficulty int
@@ -72,27 +78,36 @@ func getDifficulty() int {
 		}
 
 		input = strings.TrimSpace(input)
+		// Если ввод пустой, возвращаем предыдущее значение сложности
 		if input == "" {
 			return prevDiff
 		}
+		// Пытаемся распарсить ввод как целое число
 		_, err = fmt.Sscanf(input, "%d", &difficulty)
+		// Проверяем корректность ввода: должно быть числом в диапазоне 1-10
 		if err != nil || difficulty < 1 || difficulty > 10 {
 			fmt.Println(ColorRed + "Invalid input. Please enter a number between 1 and 10." + ColorReset)
 			continue
 		}
+		// Сохраняем выбранное значение как предыдущее
 		prevDiff = difficulty
 		return difficulty
 	}
 }
 
+// Функция получения случайного текста для заданного уровня сложности
+// Выбирает текст из пула текстов, соответствующего выбранному уровню
 func getText(difficulty int) string {
+	// Получаем массив текстов для выбранного уровня сложности
 	texts := models.TextPools[difficulty]
-	// Use time to get pseudo-random selection
+	// Генерируем случайный индекс для выбора текста
 	index := rand.Intn(len(texts))
-	//index := time.Now().UnixNano() % int64(len(texts))
+	// Возвращаем случайно выбранный текст
 	return texts[index]
 }
 
+// Функция отображения текста для ввода
+// Выводит инструкцию и сам текст, который нужно набрать
 func displayText(text string) {
 	fmt.Println()
 	fmt.Println(ColorYellow + "Type the following text:" + ColorReset)
@@ -104,45 +119,62 @@ func displayText(text string) {
 	fmt.Print(ColorCyan + "Start typing: " + ColorReset)
 }
 
+// Функция получения ввода пользователя
+// Считывает строку из стандартного ввода и очищает от пробелов
 func getUserInput() string {
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
 	return strings.TrimSpace(input)
 }
 
+// Функция расчета скорости ввода (WPM - Words Per Minute)
+// Преобразует количество набранных символов и время ввода в слова в минуту
+// Стандартное определение: 5 символов = 1 слово
 func calculateWPM(charsTyped int, duration time.Duration) float64 {
+	// Защита от деления на ноль
 	if duration == 0 {
 		return 0
 	}
+	// Преобразуем длительность в минуты
 	minutes := duration.Seconds() / 60.0
-	words := float64(charsTyped) / 5.0 // Standard: 5 characters = 1 word
+	// Рассчитываем количество слов (5 символов = 1 слово)
+	words := float64(charsTyped) / 5.0
+	// Возвращаем скорость в словах в минуту
 	return words / minutes
 }
 
+// Функция расчета процента ошибок при вводе текста
+// Сравнивает введенный текст с эталонным и вычисляет долю ошибок
 func calculateErrorRate(typed, target string) float64 {
+	// Защита от деления на ноль
 	if len(target) == 0 {
 		return 0
 	}
 
+	// Счетчик ошибок
 	errors := 0
+	// Преобразуем строки в руны для корректной работы с Unicode
 	targetRunes := []rune(target)
 	typedRunes := []rune(typed)
 
-	// Count mismatched characters
+	// Сравниваем символы по позициям до конца более короткой строки
 	for i := 0; i < len(typedRunes) && i < len(targetRunes); i++ {
 		if typedRunes[i] != targetRunes[i] {
 			errors++
 		}
 	}
 
-	// Add remaining characters as errors if typed is longer
+	// Если введенный текст длиннее эталонного, добавляем разницу как ошибки
 	if len(typedRunes) > len(targetRunes) {
 		errors += len(typedRunes) - len(targetRunes)
 	}
 
+	// Возвращаем процент ошибок
 	return float64(errors) / float64(len(target)) * 100
 }
 
+// Функция отображения результатов сессии
+// Выводит статистику ввода с цветовым кодированием в зависимости от производительности
 func displayResults(ls models.LessonResults,
 	target string,
 	typed string,
@@ -153,27 +185,28 @@ func displayResults(ls models.LessonResults,
 	fmt.Println(strings.Repeat("=", 60))
 	fmt.Println()
 
-	// Format WPM with color based on performance
+	// Определяем цвет для отображения скорости в зависимости от результата
 	wpmColor := ColorReset
 	if ls.Wpm >= 60 {
-		wpmColor = ColorGreen
+		wpmColor = ColorGreen // Отличная производительность
 	} else if ls.Wpm >= 40 {
-		wpmColor = ColorYellow
+		wpmColor = ColorYellow // Хорошая производительность
 	} else {
-		wpmColor = ColorRed
+		wpmColor = ColorRed // Низкая производительность
 	}
 
+	// Выводим основные результаты
 	fmt.Printf("  %sTyping Speed:%s  %s%.2f WPM%s\n", ColorCyan, ColorReset, wpmColor, ls.Wpm, ColorReset)
 	fmt.Printf("  %sError Rate:%s    %.2f%%\n", ColorCyan, ColorReset, ls.ErrorRate)
 	fmt.Printf("  %sTime Taken:%s    %.2f seconds\n", ColorCyan, ColorReset, ls.TimeTaken.Seconds())
 	fmt.Println()
 
-	// Show typed text with visual feedback
+	// Показываем введенный текст с визуальной обратной связью
 	fmt.Println(ColorCyan + "Your typing:" + ColorReset)
 	showTypedText(target, typed)
 	fmt.Println()
 
-	// Performance message
+	// Выводим сообщение о производительности на основе результатов
 	if ls.ErrorRate < 5 && ls.Wpm > 50 {
 		fmt.Println(ColorGreen + ColorBold + "  ★ Excellent! Outstanding typing performance! ★" + ColorReset)
 	} else if ls.ErrorRate < 10 && ls.Wpm > 30 {
@@ -186,62 +219,74 @@ func displayResults(ls models.LessonResults,
 	fmt.Println(strings.Repeat("=", 60))
 }
 
+// Функция визуального отображения введенного текста
+// Показывает, какие символы были введены правильно, а какие нет
 func showTypedText(target, typed string) {
+	// Преобразуем строки в руны для корректной работы с Unicode
 	targetRunes := []rune(target)
 	typedRunes := []rune(typed)
 
 	fmt.Print("  ")
+	// Перебираем все символы эталонного текста
 	for i := 0; i < len(targetRunes); i++ {
 		if i >= len(typedRunes) {
-			// Not typed yet
+			// Символ еще не введен - отображаем как есть
 			fmt.Printf("%c", targetRunes[i])
 		} else if typedRunes[i] == targetRunes[i] {
-			// Correct
+			// Символ введен правильно - отображаем зеленым
 			fmt.Printf(ColorGreen+"%c"+ColorReset, targetRunes[i])
 		} else {
-			// Incorrect
+			// Символ введен неправильно - отображаем красным
 			fmt.Printf(ColorRed+"%c"+ColorReset, targetRunes[i])
 		}
 	}
 	fmt.Println()
 }
 
+// Функция запроса на повторную игру
+// Запрашивает у пользователя, хочет ли он сыграть еще раз
 func playAgain() bool {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		fmt.Print(ColorCyan + "\nPlay again? (y/n): " + ColorReset)
 		input, _ := reader.ReadString('\n')
+		// Очищаем ввод и приводим к нижнему регистру
 		input = strings.TrimSpace(strings.ToLower(input))
 
+		// Обрабатываем различные варианты ответа
 		switch input {
 		case "y", "yes", "":
-			return true
+			return true // Пользователь хочет сыграть еще раз
 		case "n", "no":
-			return false
+			return false // Пользователь хочет завершить игру
 		}
+		// Если ввод некорректен, запрашиваем повторно
 		fmt.Println(ColorRed + "Please enter 'y' or 'n'." + ColorReset)
 	}
 }
 
+// Функция вывода статистики пользователя
+// Отображает текущую статистику за все сессии, включая среднюю, лучшую и худшую производительность
 func printStats() {
+	// Если нет ни одной попытки, сообщаем об этом
 	if stats.attempts == 0 {
 		fmt.Println(ColorCyan + "No attempts recorded yet." + ColorReset)
 		return
 	}
 
-	// Calculate average WPM
+	// Рассчитываем среднюю скорость ввода
 	var avgWPM float64
 	if stats.attempts > 0 {
 		avgWPM = stats.totalWPM / float64(stats.attempts)
 	}
 
-	// Display statistics with formatting
+	// Выводим статистику с форматированием
 	fmt.Println()
 	fmt.Println(ColorCyan + "Your typing statistics:" + ColorReset)
 	fmt.Println(strings.Repeat("-", 40))
 
-	// Format average with color based on performance
+	// Определяем цвет для средней скорости на основе результата
 	avgColor := ColorReset
 	if avgWPM >= 60 {
 		avgColor = ColorGreen
@@ -251,86 +296,96 @@ func printStats() {
 		avgColor = ColorRed
 	}
 
+	// Выводим различные метрики статистики
 	fmt.Printf("  %sAttempts:%s       %d\n", ColorCyan, ColorReset, stats.attempts)
 	fmt.Printf("  %sBest Speed:%s     %.2f WPM\n", ColorCyan, ColorReset, stats.maxWPM)
+	// Показываем худшую скорость только если она была установлена
 	if stats.minWPM > 0 {
 		fmt.Printf("  %sWorst Speed:%s    %.2f WPM\n", ColorCyan, ColorReset, stats.minWPM)
 	}
+	// Выводим среднюю скорость с соответствующим цветом
 	fmt.Printf("  %sAverage Speed:%s  %s%.2f WPM%s\n", ColorCyan, ColorReset, avgColor, avgWPM, ColorReset)
 	fmt.Println(strings.Repeat("-", 40))
 }
 
+// Функция обновления глобальной статистики
+// Обновляет статистику на основе результатов текущей сессии
 func updateStats(wpm float64, text string, errors int) {
-	// Initialize minWPM on first attempt
+	// Инициализируем минимальную скорость на первой попытке
 	if stats.attempts == 0 {
 		stats.minWPM = wpm
 	}
 
-	// Update max WPM
+	// Обновляем максимальную скорость, если текущая лучше
 	if wpm > stats.maxWPM {
 		stats.maxWPM = wpm
-		stats.bestText = text
-		stats.bestErrors = errors
+		stats.bestText = text // Сохраняем текст лучшей попытки
+		stats.bestErrors = errors // Сохраняем количество ошибок в лучшей попытке
 	}
 
-	// Update min WPM (only for positive values)
+	// Обновляем м��нимальную скорость (только для положительных значений)
 	if wpm > 0 && (stats.attempts == 0 || wpm < stats.minWPM) {
 		stats.minWPM = wpm
 	}
 
-	// Update total and count for average
+	// Обновляем сумму и счетчик для расчета среднего значения
 	stats.totalWPM += wpm
 	stats.attempts++
 }
 
+// Основная функция запуска игры
+// Управляет основным циклом игры, обработкой сессий и взаимодействием с пользователем
 func RunGame(ctx context.Context, c context.CancelFunc, storage models.Storage) {
-	printWelcome()
-	ls := models.LessonResults{}
-	defer c()
+	printWelcome() // Выводим приветственное сообщение
+	ls := models.LessonResults{} // Создаем структуру для хранения результатов сессии
+	defer c() // Отложенная отмена контекста при завершении функции
 	for {
 		select {
-		case <-ctx.Done():
-			return
+		case <-ctx.Done(): // Проверяем, не был ли отменен контекст
+			return // Если контекст отменен, завершаем игру
 		default:
-			// Print statistics at the beginning of each attempt
+			// Выводим статистику в начале каждой попытки
 			printStats()
 
+			// Получаем уровень сложности от пользователя
 			ls.Difficulty = getDifficulty()
+			// Получаем случайный текст для выбранного уровня сложности
 			text := getText(ls.Difficulty)
+			// Отображаем текст для ввода
 			displayText(text)
 
-			// Start timer
+			// Запоминаем время начала ввода
 			startTime := time.Now()
 
-			// Get user input
+			// Получаем ввод пользователя
 			typed := getUserInput()
 
-			// Stop timer
+			// Фиксируем время, затраченное на ввод
 			ls.TimeTaken = time.Since(startTime)
 
-			// Calculate statistics
+			// Рассчитываем статистику по вводу
 			ls.Wpm = calculateWPM(len(typed), ls.TimeTaken)
 			ls.ErrorRate = calculateErrorRate(typed, text)
 			errors := int(float64(len(text)) * ls.ErrorRate / 100)
 
-			// Update global statistics
+			// Обновляем глобальную статистику
 			updateStats(ls.Wpm, text, errors)
 
-			// Save session to database
+			// Сохраняем результат сессии в базу данных
 			storage.SaveTypingLesson(ls)
 
-			// Display results
+			// Выводим результаты сессии
 			displayResults(ls, text, typed)
 
-			// Ask to play again
+			// Спрашиваем, хочет ли пользователь сыграть еще раз
 			if !playAgain() {
-				// Final statistics summary
+				// Выводим финальную статистику
 				fmt.Println()
 				fmt.Println(ColorCyan + "Final typing statistics:" + ColorReset)
 				fmt.Println(strings.Repeat("=", 50))
 				printStats()
 
-				// Best performance details
+				// Выводим детали лучшей производительности
 				if stats.attempts > 0 {
 					fmt.Println()
 					fmt.Println(ColorCyan + "Your best performance:" + ColorReset)
@@ -343,7 +398,7 @@ func RunGame(ctx context.Context, c context.CancelFunc, storage models.Storage) 
 				fmt.Println()
 				fmt.Println(ColorCyan + "Thanks for playing Typing Hero! Goodbye!" + ColorReset)
 				fmt.Println()
-				return
+				return // Завершаем игру
 			}
 		}
 	}

@@ -17,27 +17,30 @@ type Db struct {
 	db *sql.DB
 }
 
+// New создает новое соединение с базой данных SQLite
+// Инициализирует базу данных, создает необходимые таблицы и возвращает объект базы данных
+// Принимает путь к файлу базы данных и возвращает указатель на Db и возможную ошибку
 func New(dbPath string) (*Db, error) {
 
-	// Ensure the directory exists
+	// Создаем директорию для базы данных, если она не существует
 	dir := filepath.Dir(dbPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create database directory: %v", err)
 	}
 
-	// Open database connection
+	// Открываем соединение с базой данных SQLite
 	var err error
 	db, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %v", err)
 	}
 
-	// Test the connection
+	// Проверяем соединение с базой данных
 	if err = db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %v", err)
 	}
 
-	// Create tables
+	// Создаем необходимые таблицы в базе данных
 	if err = createTables(); err != nil {
 		return nil, fmt.Errorf("failed to create tables: %v", err)
 	}
@@ -49,7 +52,9 @@ func New(dbPath string) (*Db, error) {
 	}, nil
 }
 
-// createTables creates the necessary tables in the database
+// createTables создает необходимые таблицы в базе данных
+// В текущей реализации создает таблицу typing_sessions для хранения сессий пользователей
+// Возвращает ошибку в случае неудачи при создании таблицы
 func createTables() error {
 	query := `
 	CREATE TABLE IF NOT EXISTS typing_sessions (
@@ -72,15 +77,10 @@ func createTables() error {
 	return nil
 }
 
-// SaveTypingLesson(result LessonResults) error
-// 	GetTypingLessons(user string) ([]LessonResults, error)
-
-func (d *Db) GetTypingLessons(user string) ([]models.LessonResults, error) {
-	return nil, nil
-}
-
-// saveTypingSession saves a typing session to the database
-func (d *Db) SaveTypingLesson(r models.LessonResults) error {
+// SaveTypingLesson сохраняет результат сессии ввода текста в базу данных
+// Принимает структуру LessonResults с результатами сессии
+// Возвращает ошибку в случае неудачи при сохранении
+func (d *Db) SaveTypingLeрsson(r models.LessonResults) error {
 	query := `
 	INSERT INTO typing_sessions (user, start, difficulty, wpm, errorRate, timeTaken)
 	VALUES ( ?, ?, ?, ?, ?, ?)
@@ -94,7 +94,8 @@ func (d *Db) SaveTypingLesson(r models.LessonResults) error {
 	return nil
 }
 
-// closeDB closes the database connection
+// CloseDB закрывает соединение с базой данных
+// Безопасно закрывает соединение и выводит сообщение о состоянии операции
 func (d *Db) CloseDB() {
 	if db != nil {
 		if err := db.Close(); err != nil {
@@ -103,4 +104,12 @@ func (d *Db) CloseDB() {
 			log.Println("Database connection closed")
 		}
 	}
+}
+
+// GetTypingLessons возвращает историю сессий для указанного пользователя
+// Пока не реализована, возвращает пустой результат
+// Параметр user - имя пользователя, для которого запрашивается история
+// Возвращает срез LessonResults и возможную ошибку
+func (d *Db) GetTypingLessons(user string) ([]models.LessonResults, error) {
+	return nil, nil
 }

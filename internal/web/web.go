@@ -10,6 +10,10 @@ import (
 	"github.com/Ssnakerss/TypingHero/internal/web/router"
 )
 
+// StartWeb запускает веб-сервер для приложения Typing Hero
+// Создает HTTP-сервер, который обрабатывает запросы на порту 8080
+// Запускается как горутина и работает до отмены контекста
+// Принимает контекст для управления жизненным циклом и хранилище для доступа к данным
 func StartWeb(ctx context.Context, db models.Storage) {
 	hm := handlers.NewHandlerMaster(db)
 	r := router.New(hm)
