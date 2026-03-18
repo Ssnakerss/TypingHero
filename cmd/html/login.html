@@ -163,7 +163,7 @@
             <button class="btn btn-primary" id="loginBtn">Sign In</button>
             <div class="error" id="error"></div>
             <div class="links">
-                <a href="/">Back to Game</a>
+                <a href="/typing">Back to Game</a>
             </div>
         </div>
 
@@ -235,7 +235,7 @@
                     // Set cookie for server-side authentication
                     document.cookie = `currentUser=${JSON.stringify(userData)}; path=/; max-age=3600`;
                     // Redirect to game
-                    window.location.href = '/';
+                    window.location.href = '/typing';
                 } else {
                     const error = await response.json();
                     errorDiv.textContent = error.message || 'Login failed';

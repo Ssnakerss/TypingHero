@@ -19,6 +19,9 @@ func New(hm *handlers.HandlerMaster) http.Handler {
 	mux.HandleFunc("/api/text", hm.GetTextHandler)      // Получение текста для печати
 	mux.HandleFunc("/api/result", hm.SaveResultHandler) // Сохранение результатов сессии
 
+	// Страница игры
+	mux.HandleFunc("/typing", hm.TypingHandler)
+
 	// Настраиваем статические файлы
 	// Главная страница
 	mux.Handle("/", http.StripPrefix("/", http.HandlerFunc(hm.HomeHandler)))

@@ -24,7 +24,12 @@ func NewHandlerMaster(storage models.Storage) *HandlerMaster {
 
 // HomeHandler serves the main HTML page.
 func (hm *HandlerMaster) HomeHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./cmd/html/index.html")
+	http.ServeFile(w, r, "./html/login.html")
+}
+
+// TypingHandler serves the typing game page.
+func (hm *HandlerMaster) TypingHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./html/typing.html")
 }
 
 // LoginHandler обрабатывает запросы на вход пользователя
