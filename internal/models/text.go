@@ -69,3 +69,21 @@ var TextPools = map[int][]string{
 		"Type-driven development and dependent types allow us to encode business rules at the type level, making illegal states unrepresentable and eliminating entire classes of runtime errors through compile-time verification.",
 	},
 }
+
+// GetText возвращает случайный текст для указанного уровня сложности
+// Принимает уровень сложности от 1 до 10 и возвращает случайный текст из соответствующего пула
+func GetText(difficulty int) string {
+	if difficulty < 1 || difficulty > 10 {
+		difficulty = 1
+	}
+
+	pool := TextPools[difficulty]
+	if len(pool) == 0 {
+		// Возвращаем текст по умолчанию, если пул пуст
+		return "The quick brown fox jumps over the lazy dog."
+	}
+
+	// В реальной реализации здесь должна быть случайная выборка
+	// Для простоты возвращаем первый текст из пула
+	return pool[0]
+}

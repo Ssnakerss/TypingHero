@@ -35,8 +35,8 @@ const (
 	ColorGreen  = "\033[32m" // Зеленый цвет для правильных символов и положительных сообщений
 	ColorRed    = "\033[31m" // Красный цвет для ошибок и неправильных символов
 	ColorYellow = "\033[33m" // Желтый цвет для предупреждений и средней производительности
-	ColorReset  = "\033[0m" // Сброс цвета и стиля к значениям по умолчанию
-	ColorBold   = "\033[1m" // Жирный шрифт для выделения важной информации
+	ColorReset  = "\033[0m"  // Сброс цвета и стиля к значениям по умолчанию
+	ColorBold   = "\033[1m"  // Жирный шрифт для выделения важной информации
 )
 
 // Функция вывода приветственного сообщения и инструкций
@@ -319,7 +319,7 @@ func updateStats(wpm float64, text string, errors int) {
 	// Обновляем максимальную скорость, если текущая лучше
 	if wpm > stats.maxWPM {
 		stats.maxWPM = wpm
-		stats.bestText = text // Сохраняем текст лучшей попытки
+		stats.bestText = text     // Сохраняем текст лучшей попытки
 		stats.bestErrors = errors // Сохраняем количество ошибок в лучшей попытке
 	}
 
@@ -335,10 +335,12 @@ func updateStats(wpm float64, text string, errors int) {
 
 // Основная функция запуска игры
 // Управляет основным циклом игры, обработкой сессий и взаимодействием с пользователем
-func RunGame(ctx context.Context, c context.CancelFunc, storage models.Storage) {
-	printWelcome() // Выводим приветственное сообщение
+func RunGame(ctx context.Context, c context.CancelFunc, storage models.Storage, userID int) {
+	// Создаем структуру для хранения результатов сессии
 	ls := models.LessonResults{} // Создаем структуру для хранения результатов сессии
-	defer c() // Отложенная отмена контекста при завершении функции
+	ls.UserID = userID           // Устанавливаем ID пользователя в структуру результатов
+	printWelcome()               // Выводим приветственное сообщение
+	defer c()                    // Отложенная отмена контекста при завершении функции
 	for {
 		select {
 		case <-ctx.Done(): // Проверяем, не был ли отменен контекст
@@ -356,6 +358,7 @@ func RunGame(ctx context.Context, c context.CancelFunc, storage models.Storage) 
 
 			// Запоминаем время начала ввода
 			startTime := time.Now()
+			ls.When = startTime
 
 			// Получаем ввод пользователя
 			typed := getUserInput()
