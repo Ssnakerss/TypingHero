@@ -10,6 +10,7 @@ import (
 
 	"github.com/Ssnakerss/TypingHero/internal/console"
 	"github.com/Ssnakerss/TypingHero/internal/database"
+	"github.com/Ssnakerss/TypingHero/internal/web"
 )
 
 func main() {
@@ -38,6 +39,6 @@ func main() {
 	}()
 
 	go console.RunGame(ctx, cancel, db)
-	// go web.StartWeb(ctx, db)
+	go web.StartWeb(ctx, db)
 	<-ctx.Done()
 }
