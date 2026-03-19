@@ -10,6 +10,18 @@ import (
 	"time"
 
 	"github.com/Ssnakerss/TypingHero/internal/models"
+	"github.com/Ssnakerss/TypingHero/internal/utils"
+)
+
+// Константы для цветового оформления вывода в терминале
+// Используются escape-коды ANSI для изменения цвета и стиля текста
+const (
+	ColorCyan   = "\033[36m" // Голубой цвет для заголовков и инструкций
+	ColorGreen  = "\033[32m" // Зеленый цвет для правильных символов и положительных сообщений
+	ColorRed    = "\033[31m" // Красный цвет для ошибок и неправильных символов
+	ColorYellow = "\033[33m" // Желтый цвет для предупреждений и средней производительности
+	ColorReset  = "\033[0m"  // Сброс цвета и стиля к значениям по умолчанию
+	ColorBold   = "\033[1m"  // Жирный шрифт для выделения важной информации
 )
 
 // Структура для хранения статистики пользователя за все сессии
@@ -27,17 +39,6 @@ var stats = struct {
 	totalWPM: 0,
 	attempts: 0,
 }
-
-// Константы для цветового оформления вывода в терминале
-// Используются escape-коды ANSI для изменения цвета и стиля текста
-const (
-	ColorCyan   = "\033[36m" // Голубой цвет для заголовков и инструкций
-	ColorGreen  = "\033[32m" // Зеленый цвет для правильных символов и положительных сообщений
-	ColorRed    = "\033[31m" // Красный цвет для ошибок и неправильных символов
-	ColorYellow = "\033[33m" // Желтый цвет для предупреждений и средней производительности
-	ColorReset  = "\033[0m"  // Сброс цвета и стиля к значениям по умолчанию
-	ColorBold   = "\033[1m"  // Жирный шрифт для выделения важной информации
-)
 
 // Функция вывода приветственного сообщения и инструкций
 // Отображает анимационный логотип и основные правила игры
@@ -125,52 +126,6 @@ func getUserInput() string {
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
 	return strings.TrimSpace(input)
-}
-
-// Функция расчета скорости ввода (WPM - Words Per Minute)
-// Преобразует количество набранных символов и время ввода в слова в минуту
-// Стандартное определение: 5 символов = 1 слово
-func calculateWPM(charsTyped int, duration time.Duration) float64 {
-	// Защита от деления на ноль
-	if duration == 0 {
-		return 0
-	}
-	// Преобразуем длительность в минуты
-	minutes := duration.Seconds() / 60.0
-	// Рассчитываем количество слов (5 символов = 1 слово)
-	words := float64(charsTyped) / 5.0
-	// Возвращаем скорость в словах в минуту
-	return words / minutes
-}
-
-// Функция расчета процента ошибок при вводе текста
-// Сравнивает введенный текст с эталонным и вычисляет долю ошибок
-func calculateErrorRate(typed, target string) float64 {
-	// Защита от деления на ноль
-	if len(target) == 0 {
-		return 0
-	}
-
-	// Счетчик ошибок
-	errors := 0
-	// Преобразуем строки в руны для корректной работы с Unicode
-	targetRunes := []rune(target)
-	typedRunes := []rune(typed)
-
-	// Сравниваем символы по позициям до конца более короткой строки
-	for i := 0; i < len(typedRunes) && i < len(targetRunes); i++ {
-		if typedRunes[i] != targetRunes[i] {
-			errors++
-		}
-	}
-
-	// Если введенный текст длиннее эталонного, добавляем разницу как ошибки
-	if len(typedRunes) > len(targetRunes) {
-		errors += len(typedRunes) - len(targetRunes)
-	}
-
-	// Возвращаем процент ошибок
-	return float64(errors) / float64(len(target)) * 100
 }
 
 // Функция отображения результатов сессии
@@ -367,8 +322,8 @@ func RunGame(ctx context.Context, c context.CancelFunc, storage models.Storage, 
 			ls.TimeTaken = time.Since(startTime)
 
 			// Рассчитываем статистику по вводу
-			ls.Wpm = calculateWPM(len(typed), ls.TimeTaken)
-			ls.ErrorRate = calculateErrorRate(typed, text)
+			ls.Wpm = utils.CalculateWPM(len(typed), ls.TimeTaken)
+			ls.ErrorRate = utils.CalculateErrorRate(typed, text)
 			errors := int(float64(len(text)) * ls.ErrorRate / 100)
 
 			// Обновляем глобальную статистику

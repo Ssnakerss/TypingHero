@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Ssnakerss/TypingHero/internal/models"
+	"github.com/Ssnakerss/TypingHero/internal/utils"
 )
 
 // HandlerMaster структура для управления всеми обработчиками
@@ -202,8 +203,8 @@ func (hm *HandlerMaster) SaveResultHandler(w http.ResponseWriter, r *http.Reques
 	// Рассчитываем метрики
 	duration := time.Duration(req.TimeTakenSec * float64(time.Second))
 	charsTyped := len(req.UserInput)
-	wpm := calculateWPM(charsTyped, duration)
-	errorRate := calculateErrorRate(req.UserInput, req.OriginalText)
+	wpm := utils.CalculateWPM(charsTyped, duration)
+	errorRate := utils.CalculateErrorRate(req.UserInput, req.OriginalText)
 
 	// Создаем структуру результата
 	result := models.LessonResults{
@@ -233,50 +234,4 @@ func (hm *HandlerMaster) SaveResultHandler(w http.ResponseWriter, r *http.Reques
 	// Устанавливаем заголовок Content-Type и отправляем JSON-ответ
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
-}
-
-// calculateWPM рассчитывает скорость печати в словах в минуту
-// Принимает количество набранных символов и время ввода
-// Возвращает скорость в WPM (слова в минуту, где 5 символов = 1 слово)
-func calculateWPM(charsTyped int, duration time.Duration) float64 {
-	// Защита от деления на ноль
-	if duration == 0 {
-		return 0
-	}
-	// Преобразуем длительность в минуты
-	minutes := duration.Seconds() / 60.0
-	// Рассчитываем количество слов (5 символов = 1 слово)
-	words := float64(charsTyped) / 5.0
-	// Возвращаем скорость в словах в минуту
-	return words / minutes
-}
-
-// calculateErrorRate рассчитывает процент ошибок при вводе текста
-// Сравнивает введенный текст с эталонным и вычисляет долю ошибок
-func calculateErrorRate(typed, target string) float64 {
-	// Защита от деления на ноль
-	if len(target) == 0 {
-		return 0
-	}
-
-	// Счетчик ошибок
-	errors := 0
-	// Преобразуем строки в руны для корректной работы с Unicode
-	targetRunes := []rune(target)
-	typedRunes := []rune(typed)
-
-	// Сравниваем символы по позициям до конца более короткой строки
-	for i := 0; i < len(typedRunes) && i < len(targetRunes); i++ {
-		if typedRunes[i] != targetRunes[i] {
-			errors++
-		}
-	}
-
-	// Если введенный текст длиннее эталонного, добавляем разницу как ошибки
-	if len(typedRunes) > len(targetRunes) {
-		errors += len(typedRunes) - len(targetRunes)
-	}
-
-	// Возвращаем процент ошибок
-	return float64(errors) / float64(len(target)) * 100
 }

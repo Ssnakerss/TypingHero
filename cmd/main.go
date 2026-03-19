@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/Ssnakerss/TypingHero/internal/console"
+	"github.com/Ssnakerss/TypingHero/internal/constants"
 	"github.com/Ssnakerss/TypingHero/internal/database"
 	"github.com/Ssnakerss/TypingHero/internal/models"
 	"github.com/Ssnakerss/TypingHero/internal/web"
@@ -92,9 +93,9 @@ func main() {
 func selectUser(ctx context.Context, db *database.Db) (models.User, error) {
 	var user models.User
 
-	fmt.Println(ColorCyan + "\nWelcome to Typing Hero!" + ColorReset)
-	fmt.Println(ColorCyan + "Please select a user or register a new one." + ColorReset)
-	fmt.Println(ColorCyan + "Web interface available at http://localhost:8080" + ColorReset)
+	fmt.Println(constants.ColorCyan + "\nWelcome to Typing Hero!" + constants.ColorReset)
+	fmt.Println(constants.ColorCyan + "Please select a user or register a new one." + constants.ColorReset)
+	fmt.Println(constants.ColorCyan + "Web interface available at http://localhost:8080" + constants.ColorReset)
 	fmt.Println(strings.Repeat("-", 60))
 
 	for {
@@ -106,7 +107,7 @@ func selectUser(ctx context.Context, db *database.Db) (models.User, error) {
 
 		// Показываем список пользователей
 		if len(users) > 0 {
-			fmt.Println(ColorYellow + "Registered users:" + ColorReset)
+			fmt.Println(constants.ColorYellow + "Registered users:" + constants.ColorReset)
 			for i, u := range users {
 				fmt.Printf("  %d. %s (@%s)\n", i+1, u.Name, u.Nickname)
 			}
@@ -114,7 +115,7 @@ func selectUser(ctx context.Context, db *database.Db) (models.User, error) {
 		}
 
 		// Показываем опции
-		fmt.Println(ColorCyan + "Options:" + ColorReset)
+		fmt.Println(constants.ColorCyan + "Options:" + constants.ColorReset)
 		if len(users) > 0 {
 			fmt.Println("  1-" + fmt.Sprintf("%d", len(users)) + ". Select existing user")
 		}
@@ -126,7 +127,7 @@ func selectUser(ctx context.Context, db *database.Db) (models.User, error) {
 		fmt.Println("  q. Quit")
 
 		// Получаем выбор пользователя
-		fmt.Print(ColorCyan + "\nSelect option: " + ColorReset)
+		fmt.Print(constants.ColorCyan + "\nSelect option: " + constants.ColorReset)
 		var input string
 		fmt.Fscanln(os.Stdin, &input)
 		input = strings.TrimSpace(input)
@@ -139,27 +140,27 @@ func selectUser(ctx context.Context, db *database.Db) (models.User, error) {
 		// Обрабатываем регистрацию нового пользователя
 		if (len(users) == 0 && input == "1") ||
 			(len(users) > 0 && input == fmt.Sprintf("%d", len(users)+1)) {
-			fmt.Print(ColorCyan + "Enter your full name: " + ColorReset)
+			fmt.Print(constants.ColorCyan + "Enter your full name: " + constants.ColorReset)
 			fmt.Fscanln(os.Stdin, &user.Name)
 			user.Name = strings.TrimSpace(user.Name)
 
-			fmt.Print(ColorCyan + "Enter your nickname: " + ColorReset)
+			fmt.Print(constants.ColorCyan + "Enter your nickname: " + constants.ColorReset)
 			fmt.Fscanln(os.Stdin, &user.Nickname)
 			user.Nickname = strings.TrimSpace(user.Nickname)
 
 			if user.Name == "" || user.Nickname == "" {
-				fmt.Println(ColorRed + "Name and nickname cannot be empty." + ColorReset)
+				fmt.Println(constants.ColorRed + "Name and nickname cannot be empty." + constants.ColorReset)
 				continue
 			}
 
 			// Создаем или получаем существующего пользователя
 			userID, err := db.CreateUser(user.Name, user.Nickname)
 			if err != nil {
-				fmt.Println(ColorRed + "Failed to create user: " + err.Error() + ColorReset)
+				fmt.Println(constants.ColorRed + "Failed to create user: " + err.Error() + constants.ColorReset)
 				continue
 			}
 			user.ID = userID
-			fmt.Printf(ColorGreen+"Welcome back, %s!\n"+ColorReset, user.Name)
+			fmt.Printf(constants.ColorGreen+"Welcome back, %s!\n"+constants.ColorReset, user.Name)
 			return user, nil
 		}
 
@@ -168,23 +169,14 @@ func selectUser(ctx context.Context, db *database.Db) (models.User, error) {
 			var index int
 			_, err := fmt.Sscanf(input, "%d", &index)
 			if err != nil || index < 1 || index > len(users) {
-				fmt.Println(ColorRed + "Invalid option. Please try again." + ColorReset)
+				fmt.Println(constants.ColorRed + "Invalid option. Please try again." + constants.ColorReset)
 				continue
 			}
 			user = users[index-1]
-			fmt.Printf(ColorGreen+"Welcome back, %s!\n"+ColorReset, user.Name)
+			fmt.Printf(constants.ColorGreen+"Welcome back, %s!\n"+constants.ColorReset, user.Name)
 			return user, nil
 		}
 
-		fmt.Println(ColorRed + "Invalid option. Please try again." + ColorReset)
+		fmt.Println(constants.ColorRed + "Invalid option. Please try again." + constants.ColorReset)
 	}
 }
-
-// Цветовые константы для вывода в консоли
-const (
-	ColorCyan   = "\033[36m"
-	ColorGreen  = "\033[32m"
-	ColorRed    = "\033[31m"
-	ColorYellow = "\033[33m"
-	ColorReset  = "\033[0m"
-)
