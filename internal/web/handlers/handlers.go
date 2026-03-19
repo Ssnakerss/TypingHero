@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Ssnakerss/TypingHero/internal/models"
@@ -113,12 +115,13 @@ func (hm *HandlerMaster) GetTextHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Структура для получения данных о сложности
-	type difficultyRequest struct {
-		Difficulty int `json:"difficulty"`
+	// Структура для получения данных о сложности и языке
+	type textRequest struct {
+		Difficulty int    `json:"difficulty"`
+		Language   string `json:"language"`
 	}
 
-	var req difficultyRequest
+	var req textRequest
 	// Декодируем JSON из тела запроса
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -131,8 +134,20 @@ func (hm *HandlerMaster) GetTextHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Получаем случайный текст для указанного уровня сложности
-	text := models.GetText(req.Difficulty)
+	// Если язык не указан, используем английский по умолчанию
+	if req.Language == "" {
+		req.Language = "eng"
+	}
+	// Нормализуем язык к нижнему регистру
+	req.Language = strings.ToLower(req.Language)
+	// Проверяем корректность языка
+	if req.Language != "eng" && req.Language != "rus" {
+		http.Error(w, "Language must be 'eng' or 'rus'", http.StatusBadRequest)
+		return
+	}
+
+	// Получаем случайный текст для указанного уровня сложности и языка
+	text := models.GetText(req.Language, req.Difficulty)
 
 	// Формируем ответ
 	response := map[string]string{"text": text}
@@ -234,4 +249,36 @@ func (hm *HandlerMaster) SaveResultHandler(w http.ResponseWriter, r *http.Reques
 	// Устанавливаем заголовок Content-Type и отправляем JSON-ответ
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// GetUserStatsHandler возвращает статистику пользователя
+func (hm *HandlerMaster) GetUserStatsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Получаем ID пользователя из URL параметров
+	userIDStr := r.URL.Query().Get("user_id")
+	if userIDStr == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	// Получаем статистику пользователя
+	stats, err := hm.storage.GetUserStats(userID)
+	if err != nil {
+		log.Printf("Error getting user stats: %v", err)
+		http.Error(w, "Failed to get user stats", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }

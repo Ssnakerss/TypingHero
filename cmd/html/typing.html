@@ -41,6 +41,24 @@
             margin-bottom: 30px;
         }
 
+        .language-section {
+            margin-bottom: 20px;
+        }
+
+        .language-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .language-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
         .difficulty-label {
             display: block;
             margin-bottom: 10px;
@@ -228,12 +246,97 @@
         .animate-in {
             animation: fadeIn 0.5s ease-out;
         }
+
+        .user-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .user-details {
+            font-size: 1.2em;
+        }
+
+        .user-welcome {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .user-nickname {
+            opacity: 0.9;
+        }
+
+        .user-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .user-stats .stat-box {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user-stats .stat-box.total-sessions {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+        }
+
+        .user-stats .stat-box.avg-wpm {
+            background: linear-gradient(135deg, #FFC107 0%, #F57C00 100%);
+        }
+
+        .user-stats .stat-box.best-accuracy {
+            background: linear-gradient(135deg, #2196F3 0%, #1565C0 100%);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>⌨️ Typing Hero</h1>
         
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-details">
+                    <span class="user-welcome">Welcome, <span id="userName">Guest</span></span>
+                    <span class="user-nickname">(<span id="userNickname">guest</span>)</span>
+                </div>
+                <div class="user-stats" id="userStats">
+                    <div class="stat-box total-sessions">
+                        <div class="stat-value" id="totalSessions">0</div>
+                        <div class="stat-label">Sessions</div>
+                    </div>
+                    <div class="stat-box avg-wpm">
+                        <div class="stat-value" id="avgWpm">0</div>
+                        <div class="stat-label">Avg WPM</div>
+                    </div>
+                    <div class="stat-box best-accuracy">
+                        <div class="stat-value" id="bestAccuracy">0%</div>
+                        <div class="stat-label">Best Accuracy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="language-section">
+            <label class="language-label">Select Language:</label>
+            <div class="language-controls">
+                <select id="language">
+                    <option value="eng">English</option>
+                    <option value="rus">Russian</option>
+                </select>
+            </div>
+        </div>
+
         <div class="difficulty-section">
             <label class="difficulty-label">Select Difficulty (1-10):</label>
             <div class="difficulty-controls">
@@ -294,9 +397,49 @@
         let startTime = null;
         let timerInterval = null;
         let isTyping = false;
+        let currentUser = null;
+
+        // Load current user on page load
+        window.addEventListener('load', () => {
+            loadCurrentUser();
+            loadUserStats();
+        });
+
+        function loadCurrentUser() {
+            const userData = localStorage.getItem('currentUser');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userNickname').textContent = currentUser.nickname;
+            } else {
+                document.getElementById('userName').textContent = 'Guest';
+                document.getElementById('userNickname').textContent = 'guest';
+            }
+        }
+
+        async function loadUserStats() {
+            if (!currentUser) return;
+            
+            try {
+                const response = await fetch(`/api/user-stats?user_id=${currentUser.id}`);
+                if (response.ok) {
+                    const stats = await response.json();
+                    updateUserStats(stats);
+                }
+            } catch (error) {
+                console.error('Error loading user stats:', error);
+            }
+        }
+
+        function updateUserStats(stats) {
+            document.getElementById('totalSessions').textContent = stats.totalSessions || 0;
+            document.getElementById('avgWpm').textContent = stats.avgWpm || 0;
+            document.getElementById('bestAccuracy').textContent = stats.bestAccuracy ? Math.round(stats.bestAccuracy) + '%' : '0%';
+        }
 
         const difficultySlider = document.getElementById('difficulty');
         const difficultyValue = document.getElementById('difficultyValue');
+        const languageSelect = document.getElementById('language');
         const startBtn = document.getElementById('startBtn');
         const typingArea = document.getElementById('typingArea');
         const textDisplay = document.getElementById('textDisplay');
@@ -331,12 +474,13 @@
 
         async function startTyping() {
             const difficulty = parseInt(difficultySlider.value);
+            const language = languageSelect.value;
             
             try {
                 const response = await fetch('/api/text', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ difficulty })
+                    body: JSON.stringify({ difficulty, language })
                 });
                 
                 const data = await response.json();
@@ -346,6 +490,7 @@
                 typingArea.classList.remove('hidden');
                 typingArea.classList.add('animate-in');
                 results.classList.add('hidden');
+                userInput.disabled = false;
                 
                 userInput.value = '';
                 textDisplay.innerHTML = formatText(currentText, '');

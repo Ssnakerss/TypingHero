@@ -14,10 +14,11 @@ func New(hm *handlers.HandlerMaster) http.Handler {
 	mux := http.NewServeMux()
 
 	// Настраиваем маршруты для API
-	mux.HandleFunc("/api/login", hm.LoginHandler)       // Аутентификация пользователя
-	mux.HandleFunc("/api/users", hm.UsersHandler)       // Получение списка пользователей
-	mux.HandleFunc("/api/text", hm.GetTextHandler)      // Получение текста для печати
-	mux.HandleFunc("/api/result", hm.SaveResultHandler) // Сохранение результатов сессии
+	mux.HandleFunc("/api/login", hm.LoginHandler)             // Аутентификация пользователя
+	mux.HandleFunc("/api/users", hm.UsersHandler)             // Получение списка пользователей
+	mux.HandleFunc("/api/text", hm.GetTextHandler)            // Получение текста для печати
+	mux.HandleFunc("/api/result", hm.SaveResultHandler)       // Сохранение результатов сессии
+	mux.HandleFunc("/api/user-stats", hm.GetUserStatsHandler) // Получение статистики пользователя
 
 	// Страница игры
 	mux.HandleFunc("/typing", hm.TypingHandler)

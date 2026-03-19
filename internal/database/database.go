@@ -184,3 +184,33 @@ func (d *Db) GetUsers() ([]models.User, error) {
 
 	return users, nil
 }
+
+// GetUserStats возвращает статистику пользователя
+// Рассчитывает общее количество сессий, среднюю скорость ввода и лучшую точность
+func (d *Db) GetUserStats(userID int) (*models.UserStats, error) {
+	query := `
+		SELECT 
+			COUNT(*) as total_sessions,
+			AVG(wpm) as avg_wpm,
+			MAX(error_rate) as best_accuracy
+		FROM typing_sessions 
+		WHERE user_id = ?
+	`
+
+	var totalSessions int
+	var avgWpm float64
+	var bestAccuracy float64
+
+	err := d.db.QueryRow(query, userID).Scan(&totalSessions, &avgWpm, &bestAccuracy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user stats: %v", err)
+	}
+
+	stats := &models.UserStats{
+		TotalSessions: totalSessions,
+		AvgWpm:        avgWpm,
+		BestAccuracy:  100 - bestAccuracy, // Convert error rate to accuracy
+	}
+
+	return stats, nil
+}

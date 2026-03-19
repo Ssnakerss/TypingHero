@@ -42,4 +42,15 @@ type Storage interface {
 
 	// GetUsers возвращает список всех пользователей
 	GetUsers() ([]User, error)
+
+	// GetUserStats возвращает статистику пользователя
+	// Принимает ID пользователя и возвращает структуру с статистикой
+	GetUserStats(userID int) (*UserStats, error)
+}
+
+// UserStats структура для хранения статистики пользователя
+type UserStats struct {
+	TotalSessions int     `json:"totalSessions"`
+	AvgWpm        float64 `json:"avgWpm"`
+	BestAccuracy  float64 `json:"bestAccuracy"`
 }

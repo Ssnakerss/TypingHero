@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"math/rand"
+
 	"os"
 	"strings"
 	"time"
@@ -53,9 +53,10 @@ func printWelcome() {
 	fmt.Println(ColorYellow + "         Welcome to Typing Hero - Improve your typing skills!" + ColorReset)
 	fmt.Println()
 	fmt.Println(ColorCyan + "Instructions:" + ColorReset)
-	fmt.Println("  1. Select difficulty level (1-10)")
-	fmt.Println("  2. Type the displayed text as fast and accurate as you can")
-	fmt.Println("  3. View your typing speed (WPM) and error rate")
+	fmt.Println("  1. Select language (eng/rus)")
+	fmt.Println("  2. Select difficulty level (1-10)")
+	fmt.Println("  3. Type the displayed text as fast and accurate as you can")
+	fmt.Println("  4. View your typing speed (WPM) and error rate")
 	fmt.Println()
 	fmt.Println(strings.Repeat("-", 60))
 }
@@ -63,6 +64,39 @@ func printWelcome() {
 // Переменная для хранения предыдущего выбранного уровня сложности
 // Позволяет пользователю пропустить ввод, используя предыдущее значение
 var prevDiff = 1
+
+// Переменная для хранения предыдущего выбранного языка
+// Позволяет пользователю пропустить ввод, используя предыдущее значение
+var prevLang = "eng"
+
+// Функция получения языка от пользователя
+// Обеспечивает ввод и валидацию значения (eng или rus)
+func getLanguage() string {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Print(ColorCyan + "Select language (eng/rus): " + ColorReset)
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println(ColorRed + "Error reading input. Please try again." + ColorReset)
+			continue
+		}
+
+		input = strings.TrimSpace(input)
+		// Если ввод пустой, возвращаем предыдущее значение языка
+		if input == "" {
+			return prevLang
+		}
+		// Проверяем корректность ввода: должно быть "eng" или "rus"
+		if input != "eng" && input != "rus" {
+			fmt.Println(ColorRed + "Invalid input. Please enter 'eng' or 'rus'." + ColorReset)
+			continue
+		}
+		// Сохраняем выбранное значение как предыдущее
+		prevLang = input
+		return input
+	}
+}
 
 // Функция получения уровня сложности от пользователя
 // Обеспечивает ввод и валидацию значения в диапазоне от 1 до 10
@@ -94,17 +128,6 @@ func getDifficulty() int {
 		prevDiff = difficulty
 		return difficulty
 	}
-}
-
-// Функция получения случайного текста для заданного уровня сложности
-// Выбирает текст из пула текстов, соответствующего выбранному уровню
-func getText(difficulty int) string {
-	// Получаем массив текстов для выбранного уровня сложности
-	texts := models.TextPools[difficulty]
-	// Генерируем случайный индекс для выбора текста
-	index := rand.Intn(len(texts))
-	// Возвращаем случайно выбранный текст
-	return texts[index]
 }
 
 // Функция отображения текста для ввода
@@ -304,10 +327,12 @@ func RunGame(ctx context.Context, c context.CancelFunc, storage models.Storage, 
 			// Выводим статистику в начале каждой попытки
 			printStats()
 
+			// Получаем язык от пользователя
+			lang := getLanguage()
 			// Получаем уровень сложности от пользователя
 			ls.Difficulty = getDifficulty()
-			// Получаем случайный текст для выбранного уровня сложности
-			text := getText(ls.Difficulty)
+			// Получаем случайный текст для выбранного уровня сложности и языка
+			text := models.GetText(lang, ls.Difficulty)
 			// Отображаем текст для ввода
 			displayText(text)
 
